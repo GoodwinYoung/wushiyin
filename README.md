@@ -12,6 +12,14 @@
 
 ---
 
+## 🔗 演示地址 | Demo
+
+点击下方链接即可直接在浏览器中体验（由 GitHub Pages 提供托管）：
+
+**👉 [在线体验地址 (Demo Link)](https://goodwinyoung.github.io/wushiyin/)**
+
+---
+
 ## ✨ 核心特性 | Features
 
 -   **全假名覆盖**：包含清音 (Seion)、浊音/半浊音 (Dakuon) 以及拗音 (Yoon)。
