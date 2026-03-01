@@ -186,15 +186,15 @@ const emit = defineEmits<{
   transition: all 0.3s;
   width: 100%;
   text-align: center;
-  /* 初始状态：文字整体向左偏移，给右侧圆点留空间 */
-  padding-left: 10px;
-  padding-right: 40px;
+  /* 初始状态：文字整体向右偏移，给左侧圆点留空间 */
+  padding-left: 40px;
+  padding-right: 10px;
 }
 
 .switch-thumb {
   position: absolute;
   top: 4px;
-  right: 4px; /* 初始圆点在右侧 */
+  left: 4px; /* 初始圆点在左侧 */
   width: 32px;
   height: 32px;
   background-color: white;
@@ -212,14 +212,14 @@ const emit = defineEmits<{
 
 .practice-switch.active .switch-text {
   color: white;
-  /* 激活状态：文字整体向右偏移，给左侧圆点留空间 */
-  padding-left: 40px;
-  padding-right: 10px;
+  /* 激活状态：文字整体向左偏移，给右侧圆点留空间 */
+  padding-left: 10px;
+  padding-right: 40px;
 }
 
 .practice-switch.active .switch-thumb {
-  /* 圆点滑到左侧 */
-  right: calc(100% - 36px);
+  /* 圆点滑到右侧 */
+  left: calc(100% - 36px);
 }
 
 .audio-btn {
