@@ -135,13 +135,13 @@ const speakAll = () => {
             </button>
           </div>
 
-          <button 
-            @click="isPracticeMode = !isPracticeMode" 
-            class="practice-btn" 
-            :class="{ active: isPracticeMode }"
-          >
-            {{ $t('practiceMode') }}
-          </button>
+          <label class="practice-switch">
+            <input type="checkbox" v-model="isPracticeMode">
+            <span class="switch-track">
+              <span class="switch-text">{{ $t('practiceMode') }}</span>
+              <span class="switch-thumb"></span>
+            </span>
+          </label>
           
           <button 
             @click="speakAll" 
@@ -322,21 +322,76 @@ body {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
-.practice-btn {
-  padding: 10px 20px;
-  border: 2px solid #e2e8f0;
-  background: transparent;
-  border-radius: 12px;
-  font-weight: 600;
+/* New Practice Switch Styles */
+.practice-switch {
+  position: relative;
+  display: inline-block;
+  width: 120px;
+  height: 40px;
   cursor: pointer;
-  transition: all 0.2s;
-  color: #64748b;
+  user-select: none;
 }
 
-.practice-btn.active {
-  background: #fdf2f2;
-  border-color: #ef4444;
-  color: #ef4444;
+.practice-switch input {
+  display: none;
+}
+
+.switch-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+}
+
+.switch-text {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #64748b;
+  z-index: 1;
+  transition: color 0.3s;
+  /* Prevent text from shifting too much */
+  margin-left: 18px; 
+}
+
+.switch-thumb {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 32px;
+  height: 32px;
+  background-color: white;
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+
+input:checked + .switch-track {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+input:checked + .switch-track .switch-text {
+  color: white;
+  margin-left: 0;
+  margin-right: 18px;
+}
+
+input:checked + .switch-track .switch-thumb {
+  left: calc(100% - 36px);
+}
+
+.practice-switch:hover .switch-track {
+  border-color: #cbd5e1;
 }
 
 .audio-btn {
