@@ -20,44 +20,53 @@
 -   **全部播放 (Auto-Play)**：一键按序播放当前列表所有发音，支持随时暂停/停止。
 -   **双语切换 (I18n)**：完整支持中英文界面切换，自动适配对应语言字体渲染。
 -   **视觉动效**：灵动的水波纹点击特效、响应式网格布局以及丝滑的过渡动画。
--   **响应式设计**：适配 PC、平板及手机端，随时随地开启学习。
+
+---
 
 ## 🛠 技术栈 | Tech Stack
 
--   **Framework**: [Vue 3 (Composition API)](https://vuejs.org/)
--   **Language**: [TypeScript](https://www.typescriptlang.org/)
--   **Bundler**: [Vite](https://vitejs.dev/)
--   **I18n**: [vue-i18n](https://vue-i18n.intlify.dev/)
--   **Styling**: Vanilla CSS (Modern CSS Variables)
+-   **Frontend**: Vue 3 (Composition API) + TypeScript + Vite
+-   **I18n**: vue-i18n
+-   **Deployment**: Docker + Nginx (Optimized for SPA)
+-   **CI/CD**: GitLab CI (Docker-in-Docker)
 
-## 🚀 快速开始 | Getting Started
+---
 
-### 1. 克隆项目
-```bash
-git clone https://github.com/your-username/japanese-gojuon-study.git
-cd japanese-gojuon-study
-```
+## 🚀 部署说明 | Deployment
 
-### 2. 安装依赖
+### 1. 本地开发 (Local Development)
 ```bash
 npm install
-```
-
-### 3. 启动开发服务器
-```bash
 npm run dev
 ```
 
-### 4. 构建生产环境
+### 2. Docker 一键部署 (Docker One-Click)
+项目包含优化的 `nginx.conf`，支持 Gzip 压缩及 SPA 路由回退。
 ```bash
-npm run build
+# 构建并启动容器
+docker compose up -d --build
 ```
+访问地址：`http://localhost:8080`
 
-## 📸 预览说明 | Preview
-项目中包含：
--   `Seion Grid`: 基础 46 音学习。
--   `Mode Toggle`: 平假名/片假名一键对照。
--   `Practice UI`: 挑战你的记忆极限。
+### 3. CI/CD 流水线 (GitLab CI/CD)
+本项目已配置 `.gitlab-ci.yml`，支持推送到 GitLab 私有仓库后自动构建并推送镜像至 **Container Registry**：
+-   **Build 阶段**: 验证 Node.js 编译环境。
+-   **Package 阶段**: 构建 Docker 镜像并打标（`latest` & `commit_sha`）。
+
+### 4. 反向代理建议 (Reverse Proxy)
+如果你使用 **SWAG** 或其他 Nginx 反向代理服务，只需将流量转发至容器的 `80` 端口即可。
+
+---
+
+## 📁 项目结构 | Structure
+
+-   `src/data/`: 核心假名数据集。
+-   `src/components/`: 可复用的交互式组件（如 `GojuonCard`）。
+-   `src/i18n/`: 国际化语言配置文件。
+-   `Dockerfile` & `nginx.conf`: 工业级生产环境镜像配置。
+-   `.gitlab-ci.yml`: 自动化构建流水线配置。
+
+---
 
 ## 📄 开源协议 | License
 本项目采用 [MIT License](LICENSE) 开源。
