@@ -1,5 +1,7 @@
 # 🇯🇵 Japanese Gojuon Study | 五十音图交互学习
 
+[English Edition](./README_EN.md) | 中文版
+
 一个优雅、现代且互动的日语五十音图学习工具。支持平假名、片假名、浊音及拗音的全面学习，内置语音播报与练习模式。
 
 ---
