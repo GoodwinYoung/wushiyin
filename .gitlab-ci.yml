@@ -1,0 +1,46 @@
+stages:
+  - build
+  - package
+
+variables:
+  # GitLab 提供的内置变量，指向你自建仓库的镜像库
+  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+  IMAGE_LATEST: $CI_REGISTRY_IMAGE:latest
+
+# 1. 编译阶段：验证代码是否能正常 build
+build_app:
+  stage: build
+  image: node:20-alpine
+  script:
+    - npm install
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 hour
+  only:
+    - main
+    - merge_requests
+
+# 2. 镜像打包阶段：构建 Docker 镜像并推送到 GitLab Registry
+package_docker:
+  stage: package
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  before_script:
+    # 自动登录 GitLab 内部镜像仓库
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    # 构建并推送带版本号的镜像
+    - docker build -t $IMAGE_TAG .
+    - docker push $IMAGE_TAG
+    # 同时更新一次 latest 标签
+    - docker tag $IMAGE_TAG $IMAGE_LATEST
+    - docker push $IMAGE_LATEST
+  only:
+    - main
+  tags:
+    - docker # 确保你的 GitLab Runner 拥有 docker 标签并且支持 dind
