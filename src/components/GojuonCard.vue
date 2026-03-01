@@ -49,14 +49,23 @@ const handleClick = (event: MouseEvent) => {
 
 const speak = (text: string) => {
   if ('speechSynthesis' in window) {
+    // 立即停止当前所有发音，减少响应延迟
+    window.speechSynthesis.cancel();
+
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'ja-JP';
+    utterance.rate = 1.0; // 确保正常语速
+    utterance.pitch = 1.0;
     
-    utterance.onstart = () => {
+  utterance.onstart = () => {
       isPlaying.value = true;
     };
     
     utterance.onend = () => {
+      isPlaying.value = false;
+    };
+
+    utterance.onerror = () => {
       isPlaying.value = false;
     };
 

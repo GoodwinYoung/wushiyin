@@ -25,6 +25,45 @@ const currentData = computed(() => {
   }
 });
 
+// 存储乱序后的列表
+const shuffledList = ref<{ char: string; romaji: string }[]>([]);
+
+// 执行乱序逻辑
+const performShuffle = () => {
+  const chars = mode.value === 'hiragana' ? currentData.value.hiragana : currentData.value.katakana;
+  const romajis = currentData.value.romaji;
+  
+  let list: { char: string; romaji: string }[] = [];
+  for (let r = 0; r < chars.length; r++) {
+    for (let c = 0; c < chars[r].length; c++) {
+      if (chars[r][c]) {
+        list.push({
+          char: chars[r][c],
+          romaji: romajis[r][c]
+        });
+      }
+    }
+  }
+  
+  // Fisher-Yates Shuffle
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [list[i], list[j]] = [list[j], list[i]];
+  }
+  
+  shuffledList.value = list;
+};
+
+// 监听模式、分类或练习状态的变化
+watch([isPracticeMode, mode, activeCategory], ([newPractice]) => {
+  if (newPractice) {
+    // 进入练习模式时，强制停止任何正在进行的“全部播放”
+    window.speechSynthesis.cancel();
+    isSpeakingAll.value = false;
+    performShuffle();
+  }
+}, { immediate: true });
+
 const characters = computed(() => mode.value === 'hiragana' ? currentData.value.hiragana : currentData.value.katakana);
 const romajiData = computed(() => currentData.value.romaji);
 
@@ -43,38 +82,33 @@ const toggleLanguage = () => {
 const isSpeakingAll = ref(false);
 
 const speakAll = () => {
-  // 如果已经在播放，则停止当前播放（起切换/停止作用）
   if (isSpeakingAll.value) {
     window.speechSynthesis.cancel();
     isSpeakingAll.value = false;
     return;
   }
 
-  // 先清空队列中可能存在的点击发音
   window.speechSynthesis.cancel();
   
-  const flattened = characters.value.flat().filter(c => c !== '');
+  // 练习模式下不提供全部播放，直接返回
+  if (isPracticeMode.value) return;
+
+  const listToSpeak = characters.value.flat().filter(c => c !== '');
+
   let index = 0;
   isSpeakingAll.value = true;
   
   const speakNext = () => {
-    // 如果中途被手动停止了，则退出递归
     if (!isSpeakingAll.value) return;
 
-    if (index < flattened.length) {
-      const utterance = new SpeechSynthesisUtterance(flattened[index]);
+    if (index < listToSpeak.length) {
+      const utterance = new SpeechSynthesisUtterance(listToSpeak[index]);
       utterance.lang = 'ja-JP';
       utterance.onend = () => {
         index++;
-        // 延迟一小会儿播放下一个，增加停顿感
         setTimeout(speakNext, 300);
       };
-      
-      // 处理可能的错误或被取消的情况
-      utterance.onerror = () => {
-        isSpeakingAll.value = false;
-      };
-
+      utterance.onerror = () => { isSpeakingAll.value = false; };
       window.speechSynthesis.speak(utterance);
     } else {
       isSpeakingAll.value = false;
@@ -144,6 +178,7 @@ const speakAll = () => {
           </label>
           
           <button 
+            v-if="!isPracticeMode"
             @click="speakAll" 
             class="audio-btn" 
             :class="{ playing: isSpeakingAll }"
@@ -168,7 +203,20 @@ const speakAll = () => {
     </header>
 
     <main class="main-content">
-      <div class="gojuon-grid" :class="activeCategory">
+      <!-- 练习模式：显示乱序列表 -->
+      <div v-if="isPracticeMode" class="shuffle-grid">
+        <GojuonCard 
+          v-for="(item, index) in shuffledList" 
+          :key="`${item.char}-${index}`"
+          :char="item.char"
+          :romaji="item.romaji"
+          :isActive="true"
+          :isPracticeMode="isPracticeMode"
+        />
+      </div>
+
+      <!-- 普通模式：显示标准五十音图网格 -->
+      <div v-else class="gojuon-grid" :class="activeCategory">
         <div v-for="(row, rowIndex) in characters" :key="rowIndex" class="gojuon-row">
           <GojuonCard 
             v-for="(char, colIndex) in row" 
@@ -322,7 +370,6 @@ body {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
-/* New Practice Switch Styles */
 .practice-switch {
   position: relative;
   display: inline-block;
@@ -358,7 +405,6 @@ body {
   color: #64748b;
   z-index: 1;
   transition: color 0.3s;
-  /* Prevent text from shifting too much */
   margin-left: 18px; 
 }
 
@@ -388,10 +434,6 @@ input:checked + .switch-track .switch-text {
 
 input:checked + .switch-track .switch-thumb {
   left: calc(100% - 36px);
-}
-
-.practice-switch:hover .switch-track {
-  border-color: #cbd5e1;
 }
 
 .audio-btn {
@@ -443,6 +485,13 @@ input:checked + .switch-track .switch-thumb {
   grid-template-columns: repeat(3, 1fr);
 }
 
+/* 乱序模式下的自适应网格 */
+.shuffle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 16px;
+}
+
 .footer {
   text-align: center;
   padding: 40px;
@@ -455,12 +504,16 @@ input:checked + .switch-track .switch-thumb {
     font-size: 2rem;
   }
   
-  .gojuon-grid {
+  .gojuon-grid, .shuffle-grid {
     gap: 8px;
   }
   
   .gojuon-row {
     gap: 8px;
+  }
+
+  .shuffle-grid {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
   }
   
   .header {
