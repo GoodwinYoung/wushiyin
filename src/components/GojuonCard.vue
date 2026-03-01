@@ -6,8 +6,10 @@ const props = defineProps<{
   romaji: string;
   isActive: boolean;
   isPracticeMode: boolean;
+  activeChar?: string; // 新增属性
 }>();
 
+const cardRef = ref<HTMLElement | null>(null);
 const isPlaying = ref(false);
 const isRevealed = ref(false);
 const rippleStyle = ref({
@@ -22,17 +24,25 @@ watch(() => props.isPracticeMode, () => {
   isRevealed.value = false;
 });
 
-const handleClick = (event: MouseEvent) => {
-  if (!props.char || isPlaying.value) return;
+// 监听外部激活字符（用于“全部播放”时的视觉同步）
+watch(() => props.activeChar, (newVal) => {
+  if (newVal && newVal === props.char && cardRef.value) {
+    // 自动触发逻辑：从中心点扩散
+    const rect = cardRef.value.getBoundingClientRect();
+    triggerRipple(rect.width / 2, rect.height / 2);
 
-  // 计算点击位置相对于卡片的位置
-  const card = event.currentTarget as HTMLElement;
-  const rect = card.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
+    // 如果是练习模式，同步显现罗马音
+    if (props.isPracticeMode) {
+      isRevealed.value = true;
+    }
+  }
+});
 
-  // 设置波纹初始位置和大小
+const triggerRipple = (x: number, y: number) => {
+  if (!cardRef.value) return;
+  const rect = cardRef.value.getBoundingClientRect();
   const size = Math.max(rect.width, rect.height) * 2;
+
   rippleStyle.value = {
     top: `${y}px`,
     left: `${x}px`,
@@ -40,7 +50,22 @@ const handleClick = (event: MouseEvent) => {
     height: `${size}px`
   };
 
-  // 播放声音并显示发音
+  // 模拟播放状态（由外部控制声音，这里只控制视觉）
+  isPlaying.value = true;
+  setTimeout(() => {
+    isPlaying.value = false;
+  }, 600); // 与 CSS 动画时长保持一致
+};
+
+const handleClick = (event: MouseEvent) => {
+  if (!props.char || isPlaying.value) return;
+
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+
+  triggerRipple(x, y);
+
   if (props.isPracticeMode) {
     isRevealed.value = true;
   }
@@ -49,25 +74,15 @@ const handleClick = (event: MouseEvent) => {
 
 const speak = (text: string) => {
   if ('speechSynthesis' in window) {
-    // 立即停止当前所有发音，减少响应延迟
     window.speechSynthesis.cancel();
-
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'ja-JP';
-    utterance.rate = 1.0; // 确保正常语速
-    utterance.pitch = 1.0;
-    
-  utterance.onstart = () => {
-      isPlaying.value = true;
-    };
-    
-    utterance.onend = () => {
-      isPlaying.value = false;
-    };
+    utterance.rate = 1.0;
 
-    utterance.onerror = () => {
-      isPlaying.value = false;
-    };
+    // 手动点击时需要通过这些事件保持 isPlaying 状态
+    utterance.onstart = () => { isPlaying.value = true; };
+    utterance.onend = () => { isPlaying.value = false; };
+    utterance.onerror = () => { isPlaying.value = false; };
 
     window.speechSynthesis.speak(utterance);
   }
@@ -76,6 +91,7 @@ const speak = (text: string) => {
 
 <template>
   <div 
+    ref="cardRef"
     class="character-card" 
     :class="{ 
       empty: !char, 
